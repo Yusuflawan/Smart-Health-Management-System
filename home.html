@@ -1,0 +1,1070 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+
+<div id="barcodeScanner">
+    <video class="viewport"></video>
+</div>
+<div id="result"></div>
+
+<script>
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(function(stream) {
+        var video = document.querySelector('#barcodeScanner .viewport');
+        video.srcObject = stream;
+        video.play();
+    })
+    .catch(function(err) {
+        console.error("Error accessing the camera: ", err);
+    });
+
+Quagga.init({
+    inputStream: {
+        name: "Live",
+        type: "LiveStream",
+        target: document.querySelector('#barcodeScanner .viewport'),
+        constraints: {
+            width: 640,
+            height: 480,
+            facingMode: "environment"
+        },
+    },
+    decoder: {
+        readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader", "codabar_reader", "upc_reader", "upc_e_reader"]
+    }
+}, function(err) {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    console.log("Initialization finished. Ready to start");
+    Quagga.start();
+});
+
+Quagga.onDetected(function(data) {
+    let code = data.codeResult.code;
+    console.log("Barcode detected and processed: ", code);
+    document.getElementById("result").innerHTML = "Detected Barcode: " + code;
+
+    // API call to check compatibility
+    checkCompatibilityWithUSDAAPI(code);
+});
+
+async function checkCompatibilityWithUSDAAPI(barcode) {
+    const apiKey = "pYeM2yNw2NZCU3kafcurfOOJm2330KGZJRx3CdQj"; // USDA FoodData Central API key
+    try {
+        const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${barcode}&api_key=${apiKey}`);
+        const data = await response.json();
+
+        if (data.foods && data.foods.length > 0) {
+            const product = data.foods[0];
+            console.log(`Product ${product.description} is being evaluated.`);
+            document.getElementById("result").innerHTML += `<br>Product: ${product.description}`;
+
+            let ulcerSafe = checkUlcerCompatibility(product.ingredients);
+            let diabetesSafe = checkDiabetesCompatibility(product.ingredients);
+            let hypertensionSafe = checkHypertensionCompatibility(product.ingredients);
+
+            if (ulcerSafe) {
+                document.getElementById("result").innerHTML += "<br>Product is suitable for ulcer patients.";
+            } else {
+                document.getElementById("result").innerHTML += "<br>Product is NOT suitable for ulcer patients.";
+            }
+
+            if (diabetesSafe) {
+                document.getElementById("result").innerHTML += "<br>Product is suitable for diabetes patients.";
+            } else {
+                document.getElementById("result").innerHTML += "<br>Product is NOT suitable for diabetes patients.";
+            }
+
+            if (hypertensionSafe) {
+                document.getElementById("result").innerHTML += "<br>Product is suitable for hypertension patients.";
+            } else {
+                document.getElementById("result").innerHTML += "<br>Product is NOT suitable for hypertension patients.";
+            }
+
+            displayIngredients(product.ingredients);
+        } else {
+            console.log("Product information not found.");
+            document.getElementById("result").innerHTML += "<br>Product information not found.";
+        }
+    } catch (error) {
+        console.error("Error fetching data from USDA API: ", error);
+        document.getElementById("result").innerHTML += "<br>Error fetching product information.";
+    }
+
+    Quagga.stop();  // Stop continuous scanning after detecting a barcode
+}
+
+function checkUlcerCompatibility(ingredients) {
+    // List of ingredients to avoid for ulcer patients
+    const ulcerTriggers = ["caffeine", "spicy", "acidic"];
+    
+    return ingredients.every(ingredient => !ulcerTriggers.some(trigger => ingredient.includes(trigger)));
+}
+
+function checkDiabetesCompatibility(ingredients) {
+    // List of ingredients to avoid for diabetes patients
+    const diabetesTriggers = ["sugar", "glucose", "corn syrup", "high fructose corn syrup", "honey"];
+    
+    return ingredients.every(ingredient => !diabetesTriggers.some(trigger => ingredient.includes(trigger)));
+}
+
+function checkHypertensionCompatibility(ingredients) {
+    // List of ingredients to avoid for hypertension patients
+    const hypertensionTriggers = ["sodium", "salt", "sodium benzoate", "monosodium glutamate (MSG)"];
+    
+    return ingredients.every(ingredient => !hypertensionTriggers.some(trigger => ingredient.includes(trigger)));
+}
+
+function displayIngredients(ingredients) {
+    let ingredientsList = "<br>Ingredients: " + ingredients.join(", ");
+    document.getElementById("result").innerHTML += ingredientsList;
+}
+</script>
+
+</body>
+</html> -->
+
+
+
+
+
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <style>
+        .flash {
+            animation: flashAnimation 0.5s ease-in-out;
+        }
+
+        @keyframes flashAnimation {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="barcodeScanner">
+    <video class="viewport"></video>
+</div>
+<div id="result"></div>
+
+<script>
+// Accessing the camera
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(function(stream) {
+        var video = document.querySelector('#barcodeScanner .viewport');
+        video.srcObject = stream;
+        video.play();
+    })
+    .catch(function(err) {
+        console.error("Error accessing the camera: ", err);
+    });
+
+// Initialize Quagga for barcode scanning
+Quagga.init({
+    inputStream: {
+        name: "Live",
+        type: "LiveStream",
+        target: document.querySelector('#barcodeScanner .viewport'),
+        constraints: {
+            width: 640,
+            height: 480,
+            facingMode: "environment"
+        },
+    },
+    decoder: {
+        readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader", "codabar_reader", "upc_reader", "upc_e_reader"]
+    }
+}, function(err) {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    console.log("Initialization finished. Ready to start");
+    Quagga.start();
+});
+
+// Capture and process barcode
+Quagga.onDetected(function(data) {
+    let code = data.codeResult.code;
+    console.log("Barcode detected and processed: ", code);
+    document.getElementById("result").innerHTML = "Detected Barcode: " + code;
+
+    // Flash effect to indicate capture
+    document.querySelector('#barcodeScanner .viewport').classList.add('flash');
+
+    // Stop the camera after detecting the barcode (auto-capture)
+    Quagga.stop();
+
+    // API call to check compatibility
+    checkCompatibilityWithUSDAAPI(code);
+});
+
+// Fetch product information from the USDA API
+async function checkCompatibilityWithUSDAAPI(barcode) {
+    const apiKey = "pYeM2yNw2NZCU3kafcurfOOJm2330KGZJRx3CdQj"; // USDA FoodData Central API key
+    try {
+        const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${barcode}&api_key=${apiKey}`);
+        const data = await response.json();
+
+        if (data.foods && data.foods.length > 0) {
+            const product = data.foods[0];
+            console.log(`Product ${product.description} is being evaluated.`);
+            document.getElementById("result").innerHTML += `<br>Product: ${product.description}`;
+
+            let ulcerSafe = checkUlcerCompatibility(product.ingredients);
+            let diabetesSafe = checkDiabetesCompatibility(product.ingredients);
+            let hypertensionSafe = checkHypertensionCompatibility(product.ingredients);
+
+            if (ulcerSafe) {
+                document.getElementById("result").innerHTML += "<br>Product is suitable for ulcer patients.";
+            } else {
+                document.getElementById("result").innerHTML += "<br>Product is NOT suitable for ulcer patients.";
+            }
+
+            if (diabetesSafe) {
+                document.getElementById("result").innerHTML += "<br>Product is suitable for diabetes patients.";
+            } else {
+                document.getElementById("result").innerHTML += "<br>Product is NOT suitable for diabetes patients.";
+            }
+
+            if (hypertensionSafe) {
+                document.getElementById("result").innerHTML += "<br>Product is suitable for hypertension patients.";
+            } else {
+                document.getElementById("result").innerHTML += "<br>Product is NOT suitable for hypertension patients.";
+            }
+
+            displayIngredients(product.ingredients);
+        } else {
+            console.log("Product information not found.");
+            document.getElementById("result").innerHTML += "<br>Product information not found.";
+        }
+    } catch (error) {
+        console.error("Error fetching data from USDA API: ", error);
+        document.getElementById("result").innerHTML += "<br>Error fetching product information.";
+    }
+
+    Quagga.stop();  // Stop continuous scanning after detecting a barcode
+}
+
+// Check compatibility for ulcer patients
+function checkUlcerCompatibility(ingredients) {
+    const ulcerTriggers = ["caffeine", "spicy", "acidic"];
+    return ingredients.every(ingredient => !ulcerTriggers.some(trigger => ingredient.includes(trigger)));
+}
+
+// Check compatibility for diabetes patients
+function checkDiabetesCompatibility(ingredients) {
+    const diabetesTriggers = ["sugar", "glucose", "corn syrup", "high fructose corn syrup", "honey"];
+    return ingredients.every(ingredient => !diabetesTriggers.some(trigger => ingredient.includes(trigger)));
+}
+
+// Check compatibility for hypertension patients
+function checkHypertensionCompatibility(ingredients) {
+    const hypertensionTriggers = ["sodium", "salt", "sodium benzoate", "monosodium glutamate (MSG)"];
+    return ingredients.every(ingredient => !hypertensionTriggers.some(trigger => ingredient.includes(trigger)));
+}
+
+// Display ingredients
+function displayIngredients(ingredients) {
+    let ingredientsList = "<br>Ingredients: " + ingredients.join(", ");
+    document.getElementById("result").innerHTML += ingredientsList;
+}
+</script>
+
+</body>
+</html> -->
+
+
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Input</title>
+</head>
+<body>
+
+<h1>Enter Barcode</h1>
+<input type="text" id="barcodeInput" placeholder="Enter barcode" />
+<button onclick="fetchProductInfo()">Get Product Info</button>
+
+<div id="result"></div>
+
+<script>
+    async function fetchProductInfo() {
+        const barcode = document.getElementById('barcodeInput').value;
+        const apiKey = "pYeM2yNw2NZCU3kafcurfOOJm2330KGZJRx3CdQj"; // USDA FoodData Central API key
+
+        if (!barcode) {
+            document.getElementById("result").innerHTML = "Please enter a barcode.";
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${barcode}&api_key=${apiKey}`);
+            const data = await response.json();
+
+            if (data.foods && data.foods.length > 0) {
+                const product = data.foods[0];
+                document.getElementById("result").innerHTML = `
+                    <strong>Product Name:</strong> ${product.description} <br>
+                    <strong>Ingredients:</strong> ${product.ingredients ? product.ingredients.join(', ') : 'N/A'}
+                `;
+            } else {
+                document.getElementById("result").innerHTML = "Product information not found.";
+            }
+        } catch (error) {
+            console.error("Error fetching data from USDA API: ", error);
+            document.getElementById("result").innerHTML = "Error fetching product information.";
+        }
+    }
+</script>
+
+</body>
+</html> -->
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Input</title>
+</head>
+<body>
+
+<h1>Enter Barcode</h1>
+<input type="text" id="barcodeInput" placeholder="Enter barcode" />
+<button onclick="fetchProductInfo()">Get Product Info</button>
+
+<div id="result"></div>
+
+<script>
+    async function fetchProductInfo() {
+        const barcode = document.getElementById('barcodeInput').value;
+        const apiKey = "pYeM2yNw2NZCU3kafcurfOOJm2330KGZJRx3CdQj"; // USDA FoodData Central API key
+
+        if (!barcode) {
+            document.getElementById("result").innerHTML = "Please enter a barcode.";
+            return;
+        }
+
+        try {
+            const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${barcode}&api_key=${apiKey}`);
+            const data = await response.json();
+
+            if (data.foods && data.foods.length > 0) {
+                const product = data.foods[0];
+                const foodNutrients = product.foodNutrients.map(nutrient => `
+                    <li>${nutrient.nutrientName}: ${nutrient.value} ${nutrient.unitName}</li>
+                `).join('');
+
+                document.getElementById("result").innerHTML = `
+                    <strong>Product Name:</strong> ${product.description} <br>
+                    <strong>Brand:</strong> ${product.brandOwner} <br>
+                    <strong>Ingredients:</strong> ${product.ingredients || 'N/A'} <br>
+                    <strong>Food Category:</strong> ${product.foodCategory} <br>
+                    <strong>Serving Size:</strong> ${product.servingSize} ${product.servingSizeUnit} <br>
+                    <strong>Product Barcode:</strong> ${product.gtinUpc} <br>
+                    <strong>Nutrients:</strong> <ul>${foodNutrients}</ul>
+                `;
+            } else {
+                document.getElementById("result").innerHTML = "Product information not found.";
+            }
+        } catch (error) {
+            console.error("Error fetching data from USDA API: ", error);
+            document.getElementById("result").innerHTML = "Error fetching product information.";
+        }
+    }
+</script>
+
+</body>
+</html>
+ -->
+
+
+
+
+
+
+<!-- 
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Barcode Input</title>
+ </head>
+ <body>
+ 
+ <h1>Enter Barcode</h1>
+ <input type="text" id="barcodeInput" placeholder="Enter barcode" />
+ <button onclick="fetchProductInfo()">Get Product Info</button>
+ 
+ <div id="result"></div>
+ 
+ <script>
+     async function fetchProductInfo() {
+         const barcode = document.getElementById('barcodeInput').value;
+         const apiKey = "pYeM2yNw2NZCU3kafcurfOOJm2330KGZJRx3CdQj"; // USDA FoodData Central API key
+ 
+         if (!barcode) {
+             document.getElementById("result").innerHTML = "Please enter a barcode.";
+             return;
+         }
+ 
+         try {
+             const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${barcode}&api_key=${apiKey}`);
+             const data = await response.json();
+ 
+             if (data.foods && data.foods.length > 0) {
+                 const product = data.foods[0];
+                 const ingredients = product.ingredients ? product.ingredients.split(', ') : [];
+                 
+                 // Check compatibility
+                 const ulcerCompatible = checkUlcerCompatibility(ingredients);
+                 const diabetesCompatible = checkDiabetesCompatibility(ingredients);
+                 const hypertensionCompatible = checkHypertensionCompatibility(ingredients);
+ 
+                 const compatibilityStatus = `
+                     <strong>Ulcer Compatibility:</strong> ${ulcerCompatible ? 'Compatible' : 'Not Compatible'} <br>
+                     <strong>Diabetes Compatibility:</strong> ${diabetesCompatible ? 'Compatible' : 'Not Compatible'} <br>
+                     <strong>Hypertension Compatibility:</strong> ${hypertensionCompatible ? 'Compatible' : 'Not Compatible'} <br>
+                 `;
+ 
+                 const foodNutrients = product.foodNutrients.map(nutrient => `
+                     <li>${nutrient.nutrientName}: ${nutrient.value} ${nutrient.unitName}</li>
+                 `).join('');
+ 
+                 document.getElementById("result").innerHTML = `
+                     <strong>Product Name:</strong> ${product.description} <br>
+                     <strong>Brand:</strong> ${product.brandOwner} <br>
+                     <strong>Ingredients:</strong> ${product.ingredients || 'N/A'} <br>
+                     <strong>Food Category:</strong> ${product.foodCategory} <br>
+                     <strong>Serving Size:</strong> ${product.servingSize} ${product.servingSizeUnit} <br>
+                     <strong>Product Barcode:</strong> ${product.gtinUpc} <br>
+                     <strong>Nutrients:</strong> <ul>${foodNutrients}</ul>
+                     ${compatibilityStatus}
+                 `;
+             } else {
+                 document.getElementById("result").innerHTML = "Product information not found.";
+             }
+         } catch (error) {
+             console.error("Error fetching data from USDA API: ", error);
+             document.getElementById("result").innerHTML = "Error fetching product information.";
+         }
+     }
+ 
+     function checkUlcerCompatibility(ingredients) {
+         // List of ingredients to avoid for ulcer patients
+         const ulcerTriggers = ["caffeine", "spicy", "acidic"];
+         
+         return ingredients.every(ingredient => !ulcerTriggers.some(trigger => ingredient.includes(trigger)));
+     }
+ 
+     function checkDiabetesCompatibility(ingredients) {
+         // List of ingredients to avoid for diabetes patients
+         const diabetesTriggers = ["sugar", "glucose", "corn syrup", "high fructose corn syrup", "honey"];
+         
+         return ingredients.every(ingredient => !diabetesTriggers.some(trigger => ingredient.includes(trigger)));
+     }
+ 
+     function checkHypertensionCompatibility(ingredients) {
+         // List of ingredients to avoid for hypertension patients
+         const hypertensionTriggers = ["sodium", "salt", "sodium benzoate", "monosodium glutamate (MSG)"];
+         
+         return ingredients.every(ingredient => !hypertensionTriggers.some(trigger => ingredient.includes(trigger)));
+     }
+ </script>
+ 
+ </body>
+ </html>
+  -->
+
+
+
+
+
+
+
+
+
+
+
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Smart Health Management System</title>
+      <link rel="stylesheet" href="styles/home.css">
+      <link href='https://fonts.googleapis.com/css?family=Roboto Condensed' rel='stylesheet'>
+      <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+      <style>
+          /* Additional QR Reader styling */
+          #qr-reader {
+              width: 300px;
+              margin-top: 20px;
+          }
+          .hidden {
+              display: none;
+          }
+          /* Spinner styling */
+          #spinner {
+              display: none;
+              border: 4px solid #f3f3f3;
+              border-top: 4px solid #808080;
+              border-radius: 50%;
+              width: 40px;
+              height: 40px;
+              animation: spin 1s linear infinite;
+              margin: 20px auto;
+          }
+          @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+          }
+      </style>
+  </head>
+  <body>
+      <div id="main-body">
+          <h1 class="btn-shine">Enter Product's Barcode</h1>
+  
+          <div class="search">
+              <div class="search-box">
+                  <div class="search-field">
+                      <input type="text" id="barcodeInput" class="input" placeholder="1101101..." required>
+                      <div class="search-box-icon">
+                          <button class="btn-icon-content" onclick="fetchProductInfo()">
+                              <i class="search-icon">
+                              <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 512 512">
+                                  <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" fill="#fff"></path>
+                              </svg>
+                              </i>
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+  
+          <p class="or-text">or</p>
+  
+          <button id="scanBtn" onclick="startScanning()">Scan QR/Barcode</button>
+  
+          <div id="qr-reader"></div>
+
+                <!-- Spinner Element -->
+        <div id="spinner"></div>
+      </div>
+  
+      <div id="result"></div>
+      
+
+  
+      <script>
+          function startScanning() {
+              const qrCodeElement = document.getElementById('qr-reader');
+              const html5QrCode = new Html5Qrcode("qr-reader");
+  
+              html5QrCode.start(
+                  { facingMode: "environment" },
+                  {
+                      fps: 10,
+                      qrbox: { width: 250, height: 250 }
+                  },
+                  (decodedText) => {
+                      console.log("Barcode detected:", decodedText);
+                      document.getElementById('barcodeInput').value = decodedText;
+                      fetchProductInfo();
+                      scrollToResult(); // Scroll to the result after scanning
+                      html5QrCode.stop();
+                  },
+                  (errorMessage) => {
+                      console.log("Scanning error:", errorMessage);
+                  }
+              ).catch((err) => {
+                  console.error("Error starting the camera:", err);
+              });
+          }
+  
+          function scrollToResult() {
+              // Scroll to the result section smoothly
+              const resultElement = document.getElementById('result');
+              resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+  
+          async function fetchProductInfo() {
+              const barcode = document.getElementById('barcodeInput').value;
+              const apiKey = "pYeM2yNw2NZCU3kafcurfOOJm2330KGZJRx3CdQj";
+  
+              if (!barcode) {
+                  document.getElementById("result").innerHTML = "Please enter or scan a barcode.";
+                  return;
+              }
+  
+              // Show spinner
+              document.getElementById("spinner").style.display = "block";
+  
+              try {
+                  const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${barcode}&api_key=${apiKey}`);
+                  const data = await response.json();
+  
+                  if (data.foods && data.foods.length > 0) {
+                      scrollToResult();
+                      const product = data.foods[0];
+                      const ingredients = product.ingredients ? product.ingredients.split(', ') : [];
+                      
+                      const ulcerCompatible = checkUlcerCompatibility(ingredients);
+                      const diabetesCompatible = checkDiabetesCompatibility(ingredients);
+                      const hypertensionCompatible = checkHypertensionCompatibility(ingredients);
+  
+                      const compatibilityStatus = `
+                          <strong>Ulcer Compatibility:</strong> ${ulcerCompatible ? 'Compatible' : 'Not Compatible'} <br>
+                          <strong>Diabetes Compatibility:</strong> ${diabetesCompatible ? 'Compatible' : 'Not Compatible'} <br>
+                          <strong>Hypertension Compatibility:</strong> ${hypertensionCompatible ? 'Compatible' : 'Not Compatible'} <br>
+                      `;
+  
+                      const foodNutrients = product.foodNutrients.map(nutrient => `
+                          <li>${nutrient.nutrientName}: ${nutrient.value} ${nutrient.unitName}</li>
+                      `);
+  
+                      // Ingredients: Show first 3 items, toggle remaining
+                      const visibleIngredients = ingredients.slice(0, 3).join(', ');
+                      const hiddenIngredients = ingredients.slice(3).join(', ');
+  
+                      // Nutrients: Show first 3 items, toggle remaining
+                      const visibleNutrients = foodNutrients.slice(0, 3).join('');
+                      const hiddenNutrients = foodNutrients.slice(3).join('');
+  
+                      document.getElementById("result").innerHTML = `
+                          <strong>Product Name:</strong> ${product.description} <br>
+                          <strong>Brand:</strong> ${product.brandOwner} <br>
+                          <strong>Ingredients:</strong> 
+                          <span id="visibleIngredients">${visibleIngredients}</span>
+                          <span id="hiddenIngredients" class="hidden">, ${hiddenIngredients}</span>
+                          ${ingredients.length > 3 ? `<button id="moreIngredientsBtn" onclick="toggleIngredients()">Show More...</button><button id="lessIngredientsBtn" onclick="toggleIngredients()" style="display: none;">Show Less</button>` : ''}
+                          <br>
+                          <strong>Food Category:</strong> ${product.foodCategory} <br>
+                          <strong>Serving Size:</strong> ${product.servingSize} ${product.servingSizeUnit} <br>
+                          <strong>Product Barcode:</strong> ${product.gtinUpc} <br>
+                          <strong>Nutrients:</strong>
+                          <ul id="nutrientsList">
+                              ${visibleNutrients}
+                              <span id="hiddenNutrients" class="hidden">${hiddenNutrients}</span>
+                          ${foodNutrients.length > 3 ? `<button id="moreNutrientsBtn" onclick="toggleNutrients()">More List...</button><button id="lessNutrientsBtn" onclick="toggleNutrients()" style="display: none;">Less List</button><br>` : ''}
+                          </ul>
+                          ${compatibilityStatus}
+                      `;
+                  } else {
+                      document.getElementById("result").innerHTML = "Product information not found.";
+                  }
+              } catch (error) {
+                  console.error("Error fetching data from USDA API: ", error);
+                  document.getElementById("result").innerHTML = "Error fetching product information.";
+              } finally {
+                  // Hide spinner after data is fetched
+                  document.getElementById("spinner").style.display = "none";
+              }
+          }
+  
+          function checkUlcerCompatibility(ingredients) {
+              const ulcerTriggers = ["caffeine", "spicy", "acidic"];
+              return ingredients.every(ingredient => !ulcerTriggers.some(trigger => ingredient.includes(trigger)));
+          }
+  
+          function checkDiabetesCompatibility(ingredients) {
+              const diabetesTriggers = ["sugar", "glucose", "corn syrup", "high fructose corn syrup", "honey"];
+              return ingredients.every(ingredient => !diabetesTriggers.some(trigger => ingredient.includes(trigger)));
+          }
+  
+          function checkHypertensionCompatibility(ingredients) {
+              const hypertensionTriggers = ["sodium", "salt"];
+              return ingredients.every(ingredient => !hypertensionTriggers.some(trigger => ingredient.includes(trigger)));
+          }
+  
+          function toggleNutrients() {
+              const hiddenNutrients = document.getElementById('hiddenNutrients');
+              const moreBtn = document.getElementById('moreNutrientsBtn');
+              const lessBtn = document.getElementById('lessNutrientsBtn');
+  
+              if (hiddenNutrients.classList.contains('hidden')) {
+                  hiddenNutrients.classList.remove('hidden');
+                  moreBtn.style.display = 'none';
+                  lessBtn.style.display = 'inline';
+              } else {
+                  hiddenNutrients.classList.add('hidden');
+                  moreBtn.style.display = 'inline';
+                  lessBtn.style.display = 'none';
+              }
+          }
+  
+          function toggleIngredients() {
+              const hiddenIngredients = document.getElementById('hiddenIngredients');
+              const moreBtn = document.getElementById('moreIngredientsBtn');
+              const lessBtn = document.getElementById('lessIngredientsBtn');
+  
+              if (hiddenIngredients.classList.contains('hidden')) {
+                  hiddenIngredients.classList.remove('hidden');
+                  moreBtn.style.display = 'none';
+                  lessBtn.style.display = 'inline';
+              } else {
+                  hiddenIngredients.classList.add('hidden');
+                  moreBtn.style.display = 'inline';
+                  lessBtn.style.display = 'none';
+              }
+          }
+      </script>
+  </body>
+  </html>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+{
+    "totalHits": 1,
+    "currentPage": 1,
+    "totalPages": 1,
+    "pageList": [
+        1
+    ],
+    "foodSearchCriteria": {
+        "query": "012345678905",
+        "generalSearchInput": "012345678905",
+        "pageNumber": 1,
+        "numberOfResultsPerPage": 50,
+        "pageSize": 50,
+        "requireAllWords": false
+    },
+    "foods": [
+        {
+            "fdcId": 737572,
+            "description": "BURRATA, LEMON ZEST & HERB CREAMY RICOTTA,MOZZARELLA, PARMESAN, ROMANO & BURRATA CHEESES SEASONED WITH LEMON, SEA SALT & SWEET BASIL RAVIOLI, BURRATA, LEMON ZEST & HERB",
+            "dataType": "Branded",
+            "gtinUpc": "012345678905",
+            "publishedDate": "2019-12-06",
+            "brandOwner": "GOOD & GATHER",
+            "ingredients": "TURKEY BREAST, TURKEY BROTH, VINEGARâ€¡, CONTAINS 2% OR LESS OF THE FOLLOWING: MODIFIED CORN STARCH, SALT, SUGAR, SODIUM PHOSPHATES, CARRAGEENAN, NATURAL FLAVORING (CELERY POWDER, SEA SALT).",
+            "marketCountry": "United States",
+            "foodCategory": "Pepperoni, Salami & Cold Cuts",
+            "modifiedDate": "2019-10-07",
+            "dataSource": "LI",
+            "servingSizeUnit": "g",
+            "servingSize": 56.0,
+            "householdServingFullText": "2 ONZ",
+            "tradeChannels": [
+                "NO_TRADE_CHANNEL"
+            ],
+            "allHighlightFields": "<b>GTIN/UPC</b>: <em>012345678905</em>",
+            "score": -404.1503,
+            "microbes": [],
+            "foodNutrients": [
+                {
+                    "nutrientId": 1003,
+                    "nutrientName": "Protein",
+                    "nutrientNumber": "203",
+                    "unitName": "G",
+                    "derivationCode": "LCCS",
+                    "derivationDescription": "Calculated from value per serving size measure",
+                    "derivationId": 70,
+                    "value": 16.1,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 600,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261026,
+                    "percentDailyValue": 0
+                },
+                {
+                    "nutrientId": 1004,
+                    "nutrientName": "Total lipid (fat)",
+                    "nutrientNumber": "204",
+                    "unitName": "G",
+                    "derivationCode": "LCCS",
+                    "derivationDescription": "Calculated from value per serving size measure",
+                    "derivationId": 70,
+                    "value": 1.79,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 800,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261028,
+                    "percentDailyValue": 2
+                },
+                {
+                    "nutrientId": 1005,
+                    "nutrientName": "Carbohydrate, by difference",
+                    "nutrientNumber": "205",
+                    "unitName": "G",
+                    "derivationCode": "LCCS",
+                    "derivationDescription": "Calculated from value per serving size measure",
+                    "derivationId": 70,
+                    "value": 3.57,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 1110,
+                    "indentLevel": 2,
+                    "foodNutrientId": 8261030,
+                    "percentDailyValue": 1
+                },
+                {
+                    "nutrientId": 1008,
+                    "nutrientName": "Energy",
+                    "nutrientNumber": "208",
+                    "unitName": "KCAL",
+                    "derivationCode": "LCCS",
+                    "derivationDescription": "Calculated from value per serving size measure",
+                    "derivationId": 70,
+                    "value": 89.0,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 300,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261032,
+                    "percentDailyValue": 0
+                },
+                {
+                    "nutrientId": 2000,
+                    "nutrientName": "Total Sugars",
+                    "nutrientNumber": "269",
+                    "unitName": "G",
+                    "derivationCode": "LCCS",
+                    "derivationDescription": "Calculated from value per serving size measure",
+                    "derivationId": 70,
+                    "value": 1.79,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 1510,
+                    "indentLevel": 3,
+                    "foodNutrientId": 8261034,
+                    "percentDailyValue": 0
+                },
+                {
+                    "nutrientId": 1079,
+                    "nutrientName": "Fiber, total dietary",
+                    "nutrientNumber": "291",
+                    "unitName": "G",
+                    "derivationCode": "LCCD",
+                    "derivationDescription": "Calculated from a daily value percentage per serving size measure",
+                    "derivationId": 75,
+                    "value": 0.0,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 1200,
+                    "indentLevel": 3,
+                    "foodNutrientId": 8261036,
+                    "percentDailyValue": 0
+                },
+                {
+                    "nutrientId": 1087,
+                    "nutrientName": "Calcium, Ca",
+                    "nutrientNumber": "301",
+                    "unitName": "MG",
+                    "derivationCode": "LCCD",
+                    "derivationDescription": "Calculated from a daily value percentage per serving size measure",
+                    "derivationId": 75,
+                    "value": 0.0,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 5300,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261038,
+                    "percentDailyValue": 0
+                },
+                {
+                    "nutrientId": 1089,
+                    "nutrientName": "Iron, Fe",
+                    "nutrientNumber": "303",
+                    "unitName": "MG",
+                    "derivationCode": "LCCD",
+                    "derivationDescription": "Calculated from a daily value percentage per serving size measure",
+                    "derivationId": 75,
+                    "value": 0.0,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 5400,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261040,
+                    "percentDailyValue": 0
+                },
+                {
+                    "nutrientId": 1093,
+                    "nutrientName": "Sodium, Na",
+                    "nutrientNumber": "307",
+                    "unitName": "MG",
+                    "derivationCode": "LCCS",
+                    "derivationDescription": "Calculated from value per serving size measure",
+                    "derivationId": 70,
+                    "value": 946,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 5800,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261042,
+                    "percentDailyValue": 22
+                },
+                {
+                    "nutrientId": 1104,
+                    "nutrientName": "Vitamin A, IU",
+                    "nutrientNumber": "318",
+                    "unitName": "IU",
+                    "derivationCode": "LCCD",
+                    "derivationDescription": "Calculated from a daily value percentage per serving size measure",
+                    "derivationId": 75,
+                    "value": 0.0,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 7500,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261044,
+                    "percentDailyValue": 0
+                },
+                {
+                    "nutrientId": 1162,
+                    "nutrientName": "Vitamin C, total ascorbic acid",
+                    "nutrientNumber": "401",
+                    "unitName": "MG",
+                    "derivationCode": "LCCD",
+                    "derivationDescription": "Calculated from a daily value percentage per serving size measure",
+                    "derivationId": 75,
+                    "value": 0.0,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 6300,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261046,
+                    "percentDailyValue": 0
+                },
+                {
+                    "nutrientId": 1253,
+                    "nutrientName": "Cholesterol",
+                    "nutrientNumber": "601",
+                    "unitName": "MG",
+                    "derivationCode": "LCCS",
+                    "derivationDescription": "Calculated from value per serving size measure",
+                    "derivationId": 70,
+                    "value": 18.0,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 15700,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261048,
+                    "percentDailyValue": 3
+                },
+                {
+                    "nutrientId": 1257,
+                    "nutrientName": "Fatty acids, total trans",
+                    "nutrientNumber": "605",
+                    "unitName": "G",
+                    "derivationCode": "LCCS",
+                    "derivationDescription": "Calculated from value per serving size measure",
+                    "derivationId": 70,
+                    "value": 0.0,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 15400,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261050,
+                    "percentDailyValue": 0
+                },
+                {
+                    "nutrientId": 1258,
+                    "nutrientName": "Fatty acids, total saturated",
+                    "nutrientNumber": "606",
+                    "unitName": "G",
+                    "derivationCode": "LCCD",
+                    "derivationDescription": "Calculated from a daily value percentage per serving size measure",
+                    "derivationId": 75,
+                    "value": 0.0,
+                    "foodNutrientSourceId": 9,
+                    "foodNutrientSourceCode": "12",
+                    "foodNutrientSourceDescription": "Manufacturer's analytical; partial documentation",
+                    "rank": 9700,
+                    "indentLevel": 1,
+                    "foodNutrientId": 8261052,
+                    "percentDailyValue": 0
+                }
+            ],
+            "finalFoodInputFoods": [],
+            "foodMeasures": [],
+            "foodAttributes": [
+                {
+                    "value": "2",
+                    "name": "Description",
+                    "id": 183250
+                }
+            ],
+            "foodAttributeTypes": [
+                {
+                    "name": "Update Log",
+                    "description": "Changes that were made to this food",
+                    "id": 998,
+                    "foodAttributes": [
+                        {
+                            "value": "2",
+                            "name": "Description",
+                            "id": 183250
+                        }
+                    ]
+                }
+            ],
+            "foodVersionIds": []
+        }
+    ],
+    "aggregations": {
+        "dataType": {
+            "Branded": 1
+        },
+        "nutrients": {}
+    }
+} -->

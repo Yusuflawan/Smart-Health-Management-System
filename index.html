@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Health Management System Login</title>
+    <link rel="stylesheet" href="styles/home.css">
+    <link href='https://fonts.googleapis.com/css?family=Roboto+Condensed' rel='stylesheet'>
+    <!-- Firebase SDKs -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="login-box">
+            <h1>Login</h1>
+            <button id="googleLoginBtn" class="btn">Sign In with Google</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOkihVjC4fks5LTMdgi6A5EMOOIjhEDnQ",
+            authDomain: "smart-health-management-eafef.firebaseapp.com",
+            projectId: "smart-health-management-eafef",
+            storageBucket: "smart-health-management-eafef.appspot.com",
+            messagingSenderId: "702245878117",
+            appId: "1:702245878117:web:d7b6e1b95328dcb102c98c"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        auth.languageCode = 'en';
+
+        // Setup Google sign-in
+        const provider = new GoogleAuthProvider();
+
+        // Button click event for Google sign-in
+        document.getElementById("googleLoginBtn").addEventListener("click", (e) => {
+            e.preventDefault();
+
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    const user = result.user;
+                    alert(`Welcome ${user.displayName}`);
+                    console.log('User Info:', user);
+                    // Redirect or further actions after login
+                    // window.location.href = "";
+                })
+                .catch((error) => {
+                    console.error('Error during sign in:', error);
+                    alert('Error signing in: ' + error.message);
+                });
+        });
+    </script>
+</body>
+</html>
